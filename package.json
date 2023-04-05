@@ -1,31 +1,27 @@
 {
-  "name": "@XORD-one/EmberEarn",
-  "description": "",
+  "name": "EmberEarn",
   "version": "1.0.0",
-  "author": {
-    "name": "XORD-one",
-    "url": "https://github.com/XORD-one"
-  },
-  "devDependencies": {
-    "prettier": "^2.8.4",
-    "rimraf": "^4.1.2",
-    "solhint": "^3.4.0"
-  },
-  "keywords": [
-    "blockchain",
-    "ethereum",
-    "forge",
-    "foundry",
-    "smart-contracts",
-    "solidity",
-    "template"
-  ],
-  "private": true,
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "clean": "rimraf cache out",
-    "lint": "pnpm lint:sol && pnpm prettier:check",
-    "lint:sol": "forge fmt --check && pnpm solhint \"{script,src,test}/**/*.sol\"",
-    "prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
-    "prettier:write": "prettier --write \"**/*.{json,md,yml}\""
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XORD-one/EmberEarn.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/XORD-one/EmberEarn/issues"
+  },
+  "homepage": "https://github.com/XORD-one/EmberEarn#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "hardhat": "^2.13.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.2"
   }
 }

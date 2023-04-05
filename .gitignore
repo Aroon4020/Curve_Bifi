@@ -1,17 +1,11 @@
-# directories
-cache
 node_modules
-out
+.env
+coverage
+coverage.json
+typechain
+typechain-types
 
-# files
-*.env
-*.log
-.DS_Store
-.pnp.*
-lcov.info
-yarn.lock
+# Hardhat files
+cache
+artifacts
 
-# broadcasts
-!broadcast
-broadcast/*
-broadcast/*/31337/
