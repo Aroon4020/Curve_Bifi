@@ -10,6 +10,12 @@ contract CurveVault is ERC20 {
     using SafeERC20 for ERC20;
     using MathLib for uint256;
 
+    event Deposit(uint256[3] amounts,uint256 share,address receiver);
+
+    event Withdraw(uint256[3] amounts,uint256 share,address receiver);
+
+    event WithdrawInSingle(uint256 amount,uint256 share,address receiver);
+
     ///Curve contract for liquidity
     address public immutable ZAP; /// 0x3993d34e7e99Abf6B6f367309975d1360222D446;
     ///BEEFY vault to utilize curve farming
@@ -78,6 +84,7 @@ contract CurveVault is ERC20 {
             unchecked {
                 i++;
             }
+
         }
 
         uint256 lpAmount = ICurve(ZAP).add_liquidity{value: msg.value}(
@@ -88,7 +95,9 @@ contract CurveVault is ERC20 {
         uint256 before = IBeefy(BEEFY).balanceOf(address(this));
         IERC20(CRV_LP).approve(BEEFY, lpAmount);
         IBeefy(BEEFY).deposit(lpAmount);
-        _mint(receiver, IBeefy(BEEFY).balanceOf(address(this)) - before);
+        uint256 shares = IBeefy(BEEFY).balanceOf(address(this)) - before;
+        _mint(receiver, shares);
+        emit Deposit(amounts,shares,receiver);
     }
 
     /// @notice withdraw all three asset acc to the shareAmount
@@ -104,14 +113,15 @@ contract CurveVault is ERC20 {
         bool success;
         token = tokens;
         _burn(msg.sender, shares);
-        IBeefy(BEEFY).withdraw(shares);
-        (uint256 devAmount, uint256 userAmount) = _calculateAmount();
-        IERC20(CRV_LP).approve(ZAP, userAmount);
+        (uint256 devAmount, uint256 userAmount) = _calculateAmount(shares);
+        IBeefy(BEEFY).withdraw(userAmount);
+        IERC20(BEEFY).transfer(DEV_ADD, devAmount);
+        uint256 earned = IERC20(CRV_LP).balanceOf(address(this));
+        IERC20(CRV_LP).approve(ZAP, earned);
         uint256[3] memory rcv_amounts = ICurve(ZAP).remove_liquidity(
-            userAmount,
+            earned,
             min_amounts
         );
-        IERC20(CRV_LP).transfer(DEV_ADD, devAmount);
         for (uint256 i; i < token.length + 1; ) {
             if (rcv_amounts[i] > 0) {
                 if (i == 2) {
@@ -135,6 +145,7 @@ contract CurveVault is ERC20 {
                 i++;
             }
         }
+        emit Withdraw(rcv_amounts,shares,receiver);
     }
 
     /// @notice withdraw all amount in any one of three asset acc to the shareAmount
@@ -150,15 +161,16 @@ contract CurveVault is ERC20 {
     ) external {
         require(index < 3, "Invalid index");
         _burn(msg.sender, shares);
-        IBeefy(BEEFY).withdraw(shares);
-        (uint256 devAmount, uint256 userAmount) = _calculateAmount();
-        IERC20(CRV_LP).approve(ZAP, userAmount);
+        (uint256 devAmount, uint256 userAmount) = _calculateAmount(shares);
+        IBeefy(BEEFY).withdraw(userAmount);
+        IERC20(BEEFY).transfer(DEV_ADD, devAmount);
+        uint256 earned = IERC20(CRV_LP).balanceOf(address(this));
+        IERC20(CRV_LP).approve(ZAP, earned);
         uint256 rcv_amount = ICurve(ZAP).remove_liquidity_one_coin(
-            userAmount,
+            earned,
             index,
             min_amount
         );
-        IERC20(CRV_LP).transfer(DEV_ADD, devAmount);
         bool success;
         if (rcv_amount > 0) {
             if (index == 2) {
@@ -175,6 +187,7 @@ contract CurveVault is ERC20 {
                 require(success, "TRANSFER_FAILED");
             }
         }
+        emit WithdrawInSingle(rcv_amount,shares,receiver);
     }
 
     function _returnAssets(IERC20 token0, IERC20 token1) internal {
@@ -208,13 +221,12 @@ contract CurveVault is ERC20 {
         }
     }
 
-    function _calculateAmount()
+    function _calculateAmount(uint256 shares)
         internal
         view
         returns (uint256 devAmount, uint256 userAmount)
     {
-        uint256 amount = IERC20(CRV_LP).balanceOf(address(this));
-        devAmount = (amount * PLATFORM_CHARGES) / HUNDRED;
-        userAmount = amount - devAmount;
+        devAmount = (shares * PLATFORM_CHARGES) / HUNDRED;
+        userAmount = shares - devAmount;
     }
 }
